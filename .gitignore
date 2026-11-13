@@ -1,0 +1,17 @@
+# Large data and model artifacts
+*.pkl
+*.pt
+*.pth
+*.npy
+*.npz
+*.parquet
+*.h5ad
+*.csv.gz
+*.zip
+*.tar.gz
+data/
+checkpoints/
+__pycache__/
+.ipynb_checkpoints/
+*.log
+.DS_Store
