@@ -1,111 +1,99 @@
-# STELLAR reproduction and spatial-neighborhood ablation
+# Spatial neighborhoods in single-cell classification
 
-**Status:** exploratory computational reproduction; **not** an independent validation of the original STELLAR paper.
+**An independent reproduction and ablation study based on STELLAR**
 
-## Research question
+This project started with a reproduction of [STELLAR](https://github.com/snap-stanford/stellar), a graph-based method for annotating spatial single-cell measurements. I then used its supervised Encoder to test a narrower question: **does including nearby cells improve cell-type prediction compared with using each cell's protein measurements alone?**
 
-When does spatial neighborhood information improve cell-type classification from CODEX single-cell protein measurements?
+The main analysis uses public CODEX data from four colon regions. Adding spatial edges changed predictions, but it did not consistently improve classification. In particular, balanced accuracy was lower with spatial edges in all four held-out regions.
 
-## What was done
+This is a study of STELLAR's **Encoder**, not a benchmark of the full STELLAR pipeline for discovering candidate novel cell types.
 
-1. Adapted the original [STELLAR](https://github.com/snap-stanford/stellar) Python implementation to a recent PyTorch/PyG environment and reproduced training and predictions on the authors' preprocessed Tonsil/Barrett's esophagus graph.
-2. Trained the **STELLAR Encoder only** as a supervised ten-class classifier on 86,984 labeled reference cells (44 protein markers), comparing the full spatial graph with the same encoder when neighbor edges were removed.
-3. Used a **transductive** 70/10/20 train/validation/test label split on the same reference graph, selected the epoch using validation macro-F1, and repeated with random seeds 42, 7, 123, and 2026.
-4. Performed exploratory class-specific and neighborhood-homophily analyses of model predictions.
+## Main experiment: held-out colon regions
 
-The full original STELLAR method includes discovery of candidate novel cell types on an unlabeled target graph. The supervised Encoder ablation here **does not evaluate that full task**.
+The [B004 CODEX dataset](https://doi.org/10.5061/dryad.g4f4qrfrc) contains 110,633 annotated colon cells from four regions of one donor, measured with 48 protein markers. In each run, two regions were used for training, one for checkpoint selection, and one for testing. Each region was tested once.
 
-## Preliminary results
+Both models used the same supervised Encoder and training settings. The *spatial* model received a graph of neighboring cells; the *no-edges* control used the same architecture with neighbor edges removed. Protein normalization was fitted on training regions only.
 
-| Metric, four runs (mean ± sample SD) | With spatial edges | Without neighbor edges |
+| Test region | Cells | Accuracy difference (pp) | Macro-F1 difference | Balanced accuracy difference (pp) |
+|---|---:|---:|---:|---:|
+| reg001 | 33,793 | -0.5741 | -0.0583 | -3.8933 |
+| reg002 | 21,232 | +0.9467 | -0.0072 | -1.3158 |
+| reg003 | 30,545 | -0.0688 | +0.0050 | -0.1694 |
+| reg004 | 25,063 | +0.3511 | +0.0031 | -1.5129 |
+| **Mean of four regions** | | **+0.1637** | **-0.0144** | **-1.7228** |
+
+Differences are **spatial minus no-edges**; positive values favor the spatial model. Macro-F1 uses a fixed set of 20 colon cell types. The mean gives each region equal weight.
+
+![Accuracy differences across four held-out colon regions](figures/b004_region_effects.png)
+
+[Macro-F1 figure](figures/b004_region_effects_macro_f1.png) · [Balanced accuracy figure](figures/b004_region_effects_balanced_accuracy.png) · [Full four-region analysis](docs/b004_four_region_summary.md)
+
+Across the four test regions, the spatial model made **74 more correct predictions out of 110,633 cells** in total, equivalent to a pooled accuracy difference of approximately **0.067 percentage points**. That pooled estimate weights cells equally; the table's mean weights regions equally. Neither comparison supports a consistent advantage for adding neighbor edges.
+
+Class-level changes also varied by region. For example, the spatial model's F1 for transit-amplifying (TA) cells improved in three regions but decreased substantially in the fourth.
+
+## Earlier reproduction and same-graph experiment
+
+I ran the published STELLAR training and prediction workflow on the authors' preprocessed Tonsil/Barrett's esophagus example: **86,984 labeled reference cells**, **45,958 unlabeled target cells**, and **44 markers**. This run produced predictions for the target graph, including candidate novel-class assignments. These are model outputs, not confirmed discoveries.
+
+A separate experiment compared the supervised Encoder with and without spatial edges on the 86,984 labeled reference cells. It used a **transductive 70/10/20 label split** on the same graph and four random seeds (42, 7, 123, 2026).
+
+| Test metric, mean ± SD across four seeds | Spatial | No edges |
 |---|---:|---:|
-| Test accuracy | 0.9332 ± 0.0010 | 0.9344 ± 0.0029 |
-| Test macro-F1 | 0.8707 ± 0.0189 | 0.8755 ± 0.0117 |
-| Test balanced accuracy | 0.8539 ± 0.0291 | 0.8615 ± 0.0200 |
+| Accuracy | 0.9332 ± 0.0010 | 0.9344 ± 0.0029 |
+| Macro-F1 | 0.8707 ± 0.0189 | 0.8755 ± 0.0117 |
+| Balanced accuracy | 0.8539 ± 0.0291 | 0.8615 ± 0.0200 |
 
-Spatial and no-edge classification were similar in this setting; **no general superiority is claimed**. The tests were exploratory, repeated on the same graph, and are not four independent biological replicates.
+The two models performed similarly. An additional post hoc analysis suggested that local cell-type composition might affect the usefulness of neighbor aggregation, but that pattern has not been tested on independent samples.
 
-**Post hoc neighborhood analysis:** same-type neighbor fraction was 0.4572 (independent-endpoint reference 0.2510). The mean spatial-minus-no-edge accuracy difference was -0.409 percentage points for low-homophily nodes (≤25% same-type neighbors) and +0.183 percentage points for high-homophily nodes (>75%). A within-class contrast was +0.980 percentage points for innate and -0.451 for T cells, but these small differences have not been independently validated. Homophily was computed using true cell labels **after prediction, for interpretation only**.
+[Full research report](Research_summary.md) · [Same-graph analysis scripts](scripts/reproduction/) · [Same-graph Macro-F1 figure](figures/macro_f1_from_local_results.png)
 
+## Code and reproducibility
 
-## B004 held-out colon-region evaluation (new)
+The main scripts are:
 
-A region-disjoint **supervised STELLAR Encoder** comparison was completed on public CODEX donor B004, colon only. Two regions were used for training (55,025 cells), one for validation (30,545), and a *previously withheld* region for testing (25,063). Each region had its own distance-bounded k=8 spatial graph; train-only standardization prevented marker-scaling leakage. This is a **graph variant**, not the full-radius graph of the original paper.
+| File | Purpose |
+|---|---|
+| [run_b004_region_holdout.py](scripts/run_b004_region_holdout.py) | Train and evaluate one held-out colon region |
+| [audit_b004_holdout.py](scripts/audit_b004_holdout.py) | Check class coverage and paired test predictions |
+| [summarize_b004_regions.py](scripts/summarize_b004_regions.py) | Combine region-level performance and class F1 |
+| [plot_b004_regions.py](scripts/plot_b004_regions.py) | Recreate the three region-level result figures |
+| [scripts/reproduction/](scripts/reproduction/) | Tonsil/Barrett's esophagus reproduction and analyses |
 
-| Seed 42 held-out reg004 metrics | Spatial | No edges |
-|---|---:|---:|
-| Test accuracy | 0.889518 | 0.886007 |
-| Test Macro-F1, 19 types present in test | 0.798361 | 0.795145 |
-| Test Macro-F1, all 20 colon types | 0.758443 | 0.755388 |
-| Test balanced accuracy | 0.780505 | 0.795633 |
+The experiments used **Python 3.11, PyTorch 2.10.0+cu128, PyTorch Geometric 2.8.1, and an NVIDIA RTX 5090**. The original STELLAR code required minor compatibility updates for the more recent PyTorch Geometric and Scanpy environment.
 
-For paired predictions, spatial was correct alone on 559 cells versus no-edge correct alone on 471 cells; this is an **88-cell net difference out of 25,063**, not evidence of robust superiority. The test region contained no `Enterocyte_ITLN1p` cells, and multiple other types have very low test counts. Results are exploratory (same donor, one held-out region, hyperparameter exploration).
-
-- Protocol and original results: [B004 region holdout report](docs/b004_region_holdout_preliminary.md)
-- Train/validation/test script: [run_b004_region_holdout.py](scripts/run_b004_region_holdout.py)
-- Recompute paired audit: `python scripts/audit_b004_holdout.py --results results/b004_region_holdout`
-
-## B004 cross-region follow-up: four held-out colon regions (seed 42)
-
-Four region-disjoint, supervised Encoder comparisons have now been completed on **110,633 colon cells from one donor**, with each region used once for final testing and the others divided into training and validation. Graphs use symmetrized radius-bounded kNN (k=8, radius=50), **not** the original full radius graph.
-
-| Held-out region | Accuracy difference (pp) | Macro-F1 difference, fixed 20 classes | Balanced accuracy difference (pp) |
-|---|---:|---:|---:|
-| reg001 | -0.5741 | -0.0583 | -3.8933 |
-| reg002 | +0.9467 | -0.0072 | -1.3158 |
-| reg003 | -0.0688 | +0.0050 | -0.1694 |
-| reg004 | +0.3511 | +0.0031 | -1.5129 |
-| **Mean across regions** | **+0.1637** | **-0.0144** | **-1.7228** |
-
-All differences are **spatial minus no-edges**. The region-unweighted accuracy improvement is small, but the Macro-F1 and balanced-accuracy averages favor the no-edge control. A pooled tally shows **74 additional correct spatial predictions out of 110,633 unique held-out cells** (a different, cell-weighted comparison). There is **no consistent performance advantage** from adding spatial edges in these exploratory runs.
-
-The B004 experiments are **one donor, seed 42, and 4 overlapping-fold technical evaluations, not 4 biological replicates**. The results do not validate full STELLAR novel-cell-type discovery, and should not be used to claim a statistically significant or cross-donor generalization benefit.
-
-- [Four-region methods, results, and cautions](docs/b004_four_region_summary.md)
-- [Aggregate four-region summary CSV](tables/b004_region_summary_seed42.csv)
-- [Summarize from local predictions](scripts/summarize_b004_regions.py)
-- [Plot region differences from CSV](scripts/plot_b004_regions.py)
-
-To regenerate plots locally:
+Download the public [B004 CODEX CSV](https://doi.org/10.5061/dryad.g4f4qrfrc) separately and clone the [original STELLAR source](https://github.com/snap-stanford/stellar). The following runs the reg004 example from this repository's root:
 
 ```bash
+python scripts/inspect_b004_csv.py /path/to/B004_training_dryad.csv
+
+python scripts/run_b004_region_holdout.py \
+  --csv /path/to/B004_training_dryad.csv \
+  --stellar-src /path/to/stellar \
+  --test-region reg004_CL_B004 \
+  --val-region reg003_CL_B004 \
+  --seed 42 --max-epochs 250
+
+python scripts/audit_b004_holdout.py --results results/b004_region_holdout
 python scripts/summarize_b004_regions.py --results results --out tables
-python scripts/plot_b004_regions.py --csv tables/b004_region_effects.csv --out figures/b004_region_effects.png
+python scripts/plot_b004_regions.py --csv tables/b004_region_effects.csv
 ```
 
-## Figures
+The four-region analysis was run separately for each held-out region. Aggregate results and figures are included here. Raw CODEX files, per-cell predictions, and trained weights are not included.
 
-- `figures/macro_f1.png`: four-run macro-F1 summary, sample SD
-- `figures/class_homophily_effect.png`: within-class high-minus-low homophily effect (mean ± sample SD)
+**Important method detail:** the B004 spatial graphs use a symmetrized, distance-bounded k-nearest-neighbor construction (up to eight neighbors, radius 50), rather than the complete radius graph used in the original STELLAR implementation. Removing edges disables neighbor messages in GraphSAGE but retains its self-node transformation.
 
-## Regenerate plots from your original CSV outputs
+## Interpretation
 
-From this folder, with your STELLAR conda environment active:
+These are exploratory results from **one donor**. The four held-out regions are not four independent patients, and the B004 experiments have so far used only one random seed. The same-graph experiment also allowed test-node features and spatial structure to be available during training, though test labels were masked. Neither experiment measures the performance of STELLAR's complete novel-cell-type discovery task.
 
-```bash
-python make_figures.py --results ~/projects/stellar/results
-```
+The practical result is limited but useful: adding spatial neighbors did not reliably improve cell-type classification in these settings. Testing other donors, graph constructions, and random seeds would be needed before drawing broader conclusions.
 
-The script writes plots with individual random-seed points to `figures/`. The two included figures are reconstructed from the numerical summary in the chat; the regenerated versions use the full local CSVs.
+## References
 
-## Reproducibility
+- Brbić M, Cao K, Hickey JW, et al. [Annotation of spatially resolved single-cell data with STELLAR](https://doi.org/10.1038/s41592-022-01651-8). *Nature Methods* 19, 1411–1418 (2022).
+- [STELLAR source code](https://github.com/snap-stanford/stellar) (MIT license).
+- [Preprocessed STELLAR example](https://zenodo.org/records/6836373).
+- [Original CODEX dataset](https://doi.org/10.5061/dryad.g4f4qrfrc).
 
-The user's original code and data remain on their Linux workstation at `~/projects/stellar`. Keep the full graph data, weights, and large cell-level prediction arrays out of the public repository. Suggested provenance:
-
-- Original implementation: https://github.com/snap-stanford/stellar
-- Paper: https://doi.org/10.1038/s41592-022-01651-8
-- Preprocessed example: https://zenodo.org/records/6836373
-- Original measured CODEX cells, x/y coordinates, and tissue metadata: https://doi.org/10.5061/dryad.g4f4qrfrc
-
-**Environment used:** NVIDIA RTX 5090, PyTorch 2.10.0+cu128, PyG 2.8.1, Python 3.11, Scanpy 1.11.5. A small local Scanpy sparse-array compatibility patch and a legacy `louvain`/`setuptools` compatibility adjustment were required.
-
-## Limitations and next steps
-
-- These are within-reference-graph transductive tests; test-node features and graph structure were visible during training, though their labels were masked.
-- Hyperparameters and analyses were inspected repeatedly; test-set conclusions should be considered hypothesis-generating.
-- The original preprocessed `.pkl` lacks the accessible section/xy metadata needed to verify a true geographically held-out evaluation. **Do not label random cell splits as cross-section validation.**
-- The B004 CSV was subsequently inspected and an initial held-out region evaluation completed (see section above). Four held-out B004 colon regions were subsequently evaluated with seed 42 (see above). Next: test across seeds and independently annotated donors, and quantify sensitivity to graph settings without test-set-driven tuning.
-
-## Attribution
-
-STELLAR: Brbić M, Cao K, Hickey JW, et al., *Nature Methods* 2022. The upstream source code is released under the MIT license; this reproduction and its preliminary results are independent exploratory work, not an official extension by the original authors.
+This repository is an independent analysis and is not an official STELLAR release.
