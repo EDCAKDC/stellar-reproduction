@@ -27,6 +27,24 @@ Spatial and no-edge classification were similar in this setting; **no general su
 
 **Post hoc neighborhood analysis:** same-type neighbor fraction was 0.4572 (independent-endpoint reference 0.2510). The mean spatial-minus-no-edge accuracy difference was -0.409 percentage points for low-homophily nodes (≤25% same-type neighbors) and +0.183 percentage points for high-homophily nodes (>75%). A within-class contrast was +0.980 percentage points for innate and -0.451 for T cells, but these small differences have not been independently validated. Homophily was computed using true cell labels **after prediction, for interpretation only**.
 
+
+## B004 held-out colon-region evaluation (new)
+
+A region-disjoint **supervised STELLAR Encoder** comparison was completed on public CODEX donor B004, colon only. Two regions were used for training (55,025 cells), one for validation (30,545), and a *previously withheld* region for testing (25,063). Each region had its own distance-bounded k=8 spatial graph; train-only standardization prevented marker-scaling leakage. This is a **graph variant**, not the full-radius graph of the original paper.
+
+| Seed 42 held-out reg004 metrics | Spatial | No edges |
+|---|---:|---:|
+| Test accuracy | 0.889518 | 0.886007 |
+| Test Macro-F1, 19 types present in test | 0.798361 | 0.795145 |
+| Test Macro-F1, all 20 colon types | 0.758443 | 0.755388 |
+| Test balanced accuracy | 0.780505 | 0.795633 |
+
+For paired predictions, spatial was correct alone on 559 cells versus no-edge correct alone on 471 cells; this is an **88-cell net difference out of 25,063**, not evidence of robust superiority. The test region contained no `Enterocyte_ITLN1p` cells, and multiple other types have very low test counts. Results are exploratory (same donor, one held-out region, hyperparameter exploration).
+
+- Protocol and original results: [B004 region holdout report](docs/b004_region_holdout_preliminary.md)
+- Train/validation/test script: [run_b004_region_holdout.py](scripts/run_b004_region_holdout.py)
+- Recompute paired audit: `python scripts/audit_b004_holdout.py --results results/b004_region_holdout`
+
 ## Figures
 
 - `figures/macro_f1.png`: four-run macro-F1 summary, sample SD
@@ -58,7 +76,7 @@ The user's original code and data remain on their Linux workstation at `~/projec
 - These are within-reference-graph transductive tests; test-node features and graph structure were visible during training, though their labels were masked.
 - Hyperparameters and analyses were inspected repeatedly; test-set conclusions should be considered hypothesis-generating.
 - The original preprocessed `.pkl` lacks the accessible section/xy metadata needed to verify a true geographically held-out evaluation. **Do not label random cell splits as cross-section validation.**
-- Next: download original Dryad CSV, inspect tissue/region and coordinate columns, define a section-held-out protocol, fit only on training sections, choose hyperparameters on validation sections, and evaluate on untouched held-out sections.
+- The B004 CSV was subsequently inspected and an initial held-out region evaluation completed (see section above). Next: evaluate different held-out regions without using their test metrics for hyperparameter selection, and quantify robustness to graph settings.
 
 ## Attribution
 
