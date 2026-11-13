@@ -1,0 +1,5 @@
+test_region,n_test,spatial_only_correct,no_edges_only_correct,net_spatial_correct,changed_predictions
+reg001_CL_B004,33793,359,553,-194,1091
+reg002_CL_B004,21232,622,421,201,1211
+reg003_CL_B004,30545,608,629,-21,1405
+reg004_CL_B004,25063,559,471,88,1157
