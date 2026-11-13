@@ -26,13 +26,19 @@
 Spatial minus no-edge test accuracy: **+0.351 percentage points**; test Macro-F1: **+0.00322**; balanced accuracy: **−1.513 percentage points**. Mixed evidence; **no claim of improvement or significance**.
 
 ## Audit caveat
-The training console reported `y_pred contains classes not in y_true`. This may arise because the test region lacks some of the 21 label categories; predicting such classes is an error. The initial run computed Macro-F1 over labels **present in the test region** (so absent labels are not included in the average). For comparisons across held-out regions, a second metric should use a consistent full 21-class label list, and class support in each partition must be checked. Run:
+The updated class coverage and paired-prediction audit is detailed below.\n
 
-```bash
-python scripts/audit_b004_holdout.py --results results/b004_region_holdout
-```
+## Audited class coverage and paired predictions (2026-11-13)
 
-**Do not infer cross-donor generalization from these data.** Predictions on one independent region from the same donor are not an independent biological replication. Class composition, section geometry and number of unique sections can change performance. Evaluating multiple held-out regions and seeds using a pre-specified protocol is the next appropriate step.
+The local audit script was executed against the saved predictions for seed 42:
+
+- **20** cell types in the B004 colon subset; all test/validation labels occur in training. `Enterocyte_ITLN1p` has **zero** test cells, so the original 19-present-class Macro-F1 (0.798361 / 0.795145) differs from the **fixed 20-class** Macro-F1 (spatial **0.758443**, no edges **0.755388**). The absence of `Paneth` in this colon-only subset is expected; the complete B004 CSV contains 21 cell types across colon and small intestine.
+- Paired predictions across the same 25,063 held-out cells: **21,735 both correct; 559 spatial-only correct; 471 no-edge-only correct; 2,298 both wrong**. Thus spatial produced **88** more correct labels (**+0.351 percentage points**), while **1,157** cells were assigned different labels.
+- Class F1 differences (spatial minus no edges) include TA **+0.0222** (3,604 test cells), Lymphatic **+0.0206** (741), CD7_Immune **+0.1071** (only 4), B **+0.0723** (only 21), and Enterocyte_CD57p **−0.1143** (only 5). Rare-category changes are too unstable for biological conclusions.
+- The class mix shifts across regions: for example, TA has **866** training cells, **5,551** validation cells and **3,604** test cells. This distribution shift matters when interpreting the holdout metrics.
+- Test balanced accuracy is **0.780505 spatial vs 0.795633 no edges**; not every metric favors spatial. All findings are **exploratory**, with one donor and one held-out region, and the same test set has been examined repeatedly. No statistical significance or generalization superiority is claimed.
+
+Next: rotate the held-out *region* and audit the complete class vocabulary, still labeling results exploratory rather than independent biological replication.
 
 ## Reproduction
 ```bash
