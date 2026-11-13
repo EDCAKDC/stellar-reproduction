@@ -15,3 +15,22 @@ __pycache__/
 .ipynb_checkpoints/
 *.log
 .DS_Store
+# STELLAR reproduction: no raw datasets / model checkpoints on GitHub
+/data/
+/raw/
+/cache/
+/results/
+*.pkl
+*.pt
+*.pth
+*.npy
+*.npz
+*.parquet
+*.h5ad
+*.csv.gz
+*.zip
+*.tar.gz
+.env
+*.log
+__pycache__/
+.ipynb_checkpoints/
