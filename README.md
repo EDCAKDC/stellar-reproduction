@@ -45,6 +45,34 @@ For paired predictions, spatial was correct alone on 559 cells versus no-edge co
 - Train/validation/test script: [run_b004_region_holdout.py](scripts/run_b004_region_holdout.py)
 - Recompute paired audit: `python scripts/audit_b004_holdout.py --results results/b004_region_holdout`
 
+## B004 cross-region follow-up: four held-out colon regions (seed 42)
+
+Four region-disjoint, supervised Encoder comparisons have now been completed on **110,633 colon cells from one donor**, with each region used once for final testing and the others divided into training and validation. Graphs use symmetrized radius-bounded kNN (k=8, radius=50), **not** the original full radius graph.
+
+| Held-out region | Accuracy difference (pp) | Macro-F1 difference, fixed 20 classes | Balanced accuracy difference (pp) |
+|---|---:|---:|---:|
+| reg001 | -0.5741 | -0.0583 | -3.8933 |
+| reg002 | +0.9467 | -0.0072 | -1.3158 |
+| reg003 | -0.0688 | +0.0050 | -0.1694 |
+| reg004 | +0.3511 | +0.0031 | -1.5129 |
+| **Mean across regions** | **+0.1637** | **-0.0144** | **-1.7228** |
+
+All differences are **spatial minus no-edges**. The region-unweighted accuracy improvement is small, but the Macro-F1 and balanced-accuracy averages favor the no-edge control. A pooled tally shows **74 additional correct spatial predictions out of 110,633 unique held-out cells** (a different, cell-weighted comparison). There is **no consistent performance advantage** from adding spatial edges in these exploratory runs.
+
+The B004 experiments are **one donor, seed 42, and 4 overlapping-fold technical evaluations, not 4 biological replicates**. The results do not validate full STELLAR novel-cell-type discovery, and should not be used to claim a statistically significant or cross-donor generalization benefit.
+
+- [Four-region methods, results, and cautions](docs/b004_four_region_summary.md)
+- [Aggregate four-region summary CSV](tables/b004_region_summary_seed42.csv)
+- [Summarize from local predictions](scripts/summarize_b004_regions.py)
+- [Plot region differences from CSV](scripts/plot_b004_regions.py)
+
+To regenerate plots locally:
+
+```bash
+python scripts/summarize_b004_regions.py --results results --out tables
+python scripts/plot_b004_regions.py --csv tables/b004_region_effects.csv --out figures/b004_region_effects.png
+```
+
 ## Figures
 
 - `figures/macro_f1.png`: four-run macro-F1 summary, sample SD
@@ -76,7 +104,7 @@ The user's original code and data remain on their Linux workstation at `~/projec
 - These are within-reference-graph transductive tests; test-node features and graph structure were visible during training, though their labels were masked.
 - Hyperparameters and analyses were inspected repeatedly; test-set conclusions should be considered hypothesis-generating.
 - The original preprocessed `.pkl` lacks the accessible section/xy metadata needed to verify a true geographically held-out evaluation. **Do not label random cell splits as cross-section validation.**
-- The B004 CSV was subsequently inspected and an initial held-out region evaluation completed (see section above). Next: evaluate different held-out regions without using their test metrics for hyperparameter selection, and quantify robustness to graph settings.
+- The B004 CSV was subsequently inspected and an initial held-out region evaluation completed (see section above). Four held-out B004 colon regions were subsequently evaluated with seed 42 (see above). Next: test across seeds and independently annotated donors, and quantify sensitivity to graph settings without test-set-driven tuning.
 
 ## Attribution
 
