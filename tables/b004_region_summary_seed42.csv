@@ -1,0 +1,5 @@
+test_region,seed,n_test,accuracy_gain_pp,macro_f1_gain_20,balanced_acc_gain_pp,spatial_only_correct,no_edges_only_correct,net_spatial_correct,changed_predictions
+reg001_CL_B004,42,33793,-0.5741,-0.0583,-3.8933,359,553,-194,1091
+reg002_CL_B004,42,21232,0.9467,-0.0072,-1.3158,622,421,201,1211
+reg003_CL_B004,42,30545,-0.0688,0.0050,-0.1694,608,629,-21,1405
+reg004_CL_B004,42,25063,0.3511,0.0031,-1.5129,559,471,88,1157
