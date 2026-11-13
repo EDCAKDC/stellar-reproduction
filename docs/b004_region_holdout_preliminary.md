@@ -1,6 +1,6 @@
 # B004 colon region-holdout: initial result (seed 42)
 
-**Status: preliminary single-donor, single-split result.**
+**First region-held-out run (seed 42).** The full four-region comparison is available in [the final regional analysis](b004_four_region_summary.md).
 
 ## Protocol
 - Data: public B004 CODEX CSV, colon (CL) only; **one donor**.
@@ -25,10 +25,7 @@
 
 Spatial minus no-edge test accuracy: **+0.351 percentage points**; test Macro-F1: **+0.00322**; balanced accuracy: **−1.513 percentage points**. Mixed evidence; **no claim of improvement or significance**.
 
-## Audit caveat
-The updated class coverage and paired-prediction audit is detailed below.\n
-
-## Audited class coverage and paired predictions (2026-11-13)
+## Class coverage and paired predictions
 
 The local audit script was executed against the saved predictions for seed 42:
 
@@ -38,7 +35,7 @@ The local audit script was executed against the saved predictions for seed 42:
 - The class mix shifts across regions: for example, TA has **866** training cells, **5,551** validation cells and **3,604** test cells. This distribution shift matters when interpreting the holdout metrics.
 - Test balanced accuracy is **0.780505 spatial vs 0.795633 no edges**; not every metric favors spatial. All findings are **exploratory**, with one donor and one held-out region, and the same test set has been examined repeatedly. No statistical significance or generalization superiority is claimed.
 
-Next: rotate the held-out *region* and audit the complete class vocabulary, still labeling results exploratory rather than independent biological replication.
+The other three regions were subsequently tested. The [four-region analysis](b004_four_region_summary.md) supersedes conclusions from this single fold.
 
 ## Reproduction
 ```bash
